@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Crop, Minus, Plus, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,13 +36,14 @@ export function UploadImageDialog({
   const [cropRect, setCropRect] = useState<CropRect | null>(null);
   const dragStart = useRef<{ x: number; y: number } | null>(null);
 
-  useEffect(() => {
-    if (!open) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
       setZoom(1);
       setCropMode(false);
       setCropRect(null);
     }
-  }, [open, imageUrl]);
+    onOpenChange(nextOpen);
+  };
 
   const getRelativePoint = (clientX: number, clientY: number) => {
     const wrap = imageWrapRef.current;
@@ -85,7 +86,7 @@ export function UploadImageDialog({
   const applyCrop = () => {
     const image = imageRef.current;
     if (!image || !cropRect || cropRect.width < 2 || cropRect.height < 2) {
-      onOpenChange(false);
+      handleOpenChange(false);
       return;
     }
 
@@ -102,11 +103,11 @@ export function UploadImageDialog({
 
     ctx.drawImage(image, sx, sy, sw, sh, 0, 0, sw, sh);
     onSave(canvas.toDataURL("image/jpeg", 0.92));
-    onOpenChange(false);
+    handleOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl gap-0 p-0" showCloseButton>
         <DialogHeader className="border-b border-[#e4e6f7] p-6 pb-4">
           <DialogTitle className="text-xl">{fileName}</DialogTitle>
@@ -183,13 +184,13 @@ export function UploadImageDialog({
             </Button>
           </div>
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => onOpenChange(false)}>
+            <Button variant="secondary" onClick={() => handleOpenChange(false)}>
               Отменить
             </Button>
             {cropMode ? (
               <Button onClick={applyCrop}>Применить обрезку</Button>
             ) : (
-              <Button onClick={() => onOpenChange(false)}>Готово</Button>
+              <Button onClick={() => handleOpenChange(false)}>Готово</Button>
             )}
           </div>
         </DialogFooter>

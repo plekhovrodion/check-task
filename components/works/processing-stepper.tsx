@@ -11,6 +11,8 @@ interface ProcessingStepperProps {
   onCancel?: () => void;
 }
 
+const processingEstimateBase = Date.now();
+
 export function ProcessingStepper({
   progress,
   currentStep,
@@ -18,7 +20,7 @@ export function ProcessingStepper({
 }: ProcessingStepperProps) {
   const remainingMinutes = Math.max(1, Math.round(((100 - progress) / 100) * 3));
   const returnTime = new Date(
-    Date.now() + remainingMinutes * 60000
+    processingEstimateBase + remainingMinutes * 60000
   ).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
   return (

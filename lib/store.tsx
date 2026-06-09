@@ -7,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { INITIAL_ASSIGNMENTS, SAMPLE_REVIEW } from "./mock-data";
@@ -60,26 +61,37 @@ function generateId() {
   return Math.random().toString(36).slice(2, 11);
 }
 
-export function StoreProvider({ children }: { children: ReactNode }) {
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [showEmptyState, setShowEmptyState] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+function getInitialStoreState() {
+  const cached = loadStoreCache();
+  return {
+    assignments: cached?.assignments ?? INITIAL_ASSIGNMENTS,
+    showEmptyState: cached?.showEmptyState ?? false,
+  };
+}
 
-  useEffect(() => {
-    const cached = loadStoreCache();
-    if (cached) {
-      setAssignments(cached.assignments);
-      setShowEmptyState(cached.showEmptyState);
-    } else {
-      setAssignments(INITIAL_ASSIGNMENTS);
-    }
-    setHydrated(true);
+function StoreProviderClient({ children }: { children: ReactNode }) {
+  const [{ assignments, showEmptyState }, setStoreState] = useState(
+    getInitialStoreState
+  );
+
+  const setAssignments = useCallback(
+    (value: Assignment[] | ((prev: Assignment[]) => Assignment[])) => {
+      setStoreState((prev) => ({
+        ...prev,
+        assignments:
+          typeof value === "function" ? value(prev.assignments) : value,
+      }));
+    },
+    []
+  );
+
+  const setShowEmptyState = useCallback((value: boolean) => {
+    setStoreState((prev) => ({ ...prev, showEmptyState: value }));
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
     saveStoreCache({ assignments, showEmptyState });
-  }, [assignments, showEmptyState, hydrated]);
+  }, [assignments, showEmptyState]);
 
   const getAssignment = useCallback(
     (id: string) => assignments.find((a) => a.id === id),
@@ -95,7 +107,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
     setAssignments((prev) => [assignment, ...prev]);
     return assignment;
-  }, []);
+  }, [setAssignments]);
 
   const updateAssignment = useCallback(
     (id: string, data: Partial<Assignment>) => {
@@ -103,12 +115,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         prev.map((a) => (a.id === id ? { ...a, ...data } : a))
       );
     },
-    []
+    [setAssignments]
   );
 
   const deleteAssignment = useCallback((id: string) => {
     setAssignments((prev) => prev.filter((a) => a.id !== id));
-  }, []);
+  }, [setAssignments]);
 
   const getWork = useCallback(
     (assignmentId: string, workId: string) => {
@@ -133,7 +145,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         )
       );
     },
-    []
+    [setAssignments]
   );
 
   const deleteWork = useCallback((assignmentId: string, workId: string) => {
@@ -144,7 +156,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           : a
       )
     );
-  }, []);
+  }, [setAssignments]);
 
   const addStudentToAssignment = useCallback(
     (assignmentId: string, name: string) => {
@@ -160,7 +172,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       );
       return work;
     },
-    []
+    [setAssignments]
   );
 
   const submitWorksForCheck = useCallback(
@@ -203,7 +215,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         })
       );
     },
-    []
+    [setAssignments]
   );
 
   const startProcessing = useCallback(
@@ -246,7 +258,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         })
       );
     },
-    []
+    [setAssignments]
   );
 
   const updateReview = useCallback(
@@ -283,6 +295,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [
       assignments,
       showEmptyState,
+      setShowEmptyState,
       getAssignment,
       createAssignment,
       updateAssignment,
@@ -301,6 +314,42 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   return (
     <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
   );
+}
+
+export function StoreProvider({ children }: { children: ReactNode }) {
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+
+  if (!isClient) {
+    return (
+      <StoreContext.Provider
+        value={{
+          assignments: INITIAL_ASSIGNMENTS,
+          showEmptyState: false,
+          setShowEmptyState: () => {},
+          getAssignment: () => undefined,
+          createAssignment: () => INITIAL_ASSIGNMENTS[0],
+          updateAssignment: () => {},
+          deleteAssignment: () => {},
+          getWork: () => undefined,
+          updateWork: () => {},
+          deleteWork: () => {},
+          addStudentToAssignment: () => {},
+          submitWorksForCheck: () => {},
+          startProcessing: () => {},
+          completeProcessing: () => {},
+          updateReview: () => {},
+        }}
+      >
+        {children}
+      </StoreContext.Provider>
+    );
+  }
+
+  return <StoreProviderClient>{children}</StoreProviderClient>;
 }
 
 export function useStore() {

@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,15 +46,15 @@ export function UploadContent() {
     DEFAULT_STUDENT.id
   );
   const [showReorderHint, setShowReorderHint] = useState(false);
-  const [hintChecked, setHintChecked] = useState(false);
+  const hintChecked = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const [invalidNameIds, setInvalidNameIds] = useState<Set<string>>(
     () => new Set()
   );
   const studentRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
-  useEffect(() => {
-    setHintChecked(true);
-  }, []);
 
   const uploadedCount = students.filter((s) => s.files.length > 0).length;
   const allFilesUploaded =

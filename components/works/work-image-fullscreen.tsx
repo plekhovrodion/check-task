@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { NavIcon } from "@/components/layout/nav-icon";
 import { cn } from "@/lib/utils";
@@ -13,39 +13,30 @@ interface WorkImageFullscreenProps {
   onIndexChange?: (index: number) => void;
 }
 
-export function WorkImageFullscreen({
-  open,
-  onOpenChange,
+interface WorkImageFullscreenContentProps {
+  images: string[];
+  initialIndex: number;
+  onOpenChange: (open: boolean) => void;
+  onIndexChange?: (index: number) => void;
+}
+
+function WorkImageFullscreenContent({
   images,
-  initialIndex = 0,
+  initialIndex,
+  onOpenChange,
   onIndexChange,
-}: WorkImageFullscreenProps) {
+}: WorkImageFullscreenContentProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (open) {
-      setCurrentIndex(initialIndex);
-    }
-  }, [open, initialIndex]);
-
-  useEffect(() => {
-    if (open) {
-      onIndexChange?.(currentIndex);
-    }
-  }, [open, currentIndex, onIndexChange]);
+    onIndexChange?.(currentIndex);
+  }, [currentIndex, onIndexChange]);
 
   const handleClose = useCallback(() => {
     onOpenChange(false);
   }, [onOpenChange]);
 
   useEffect(() => {
-    if (!open) return;
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         handleClose();
@@ -66,11 +57,9 @@ export function WorkImageFullscreen({
       document.body.style.overflow = "";
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open, images.length, handleClose]);
+  }, [images.length, handleClose]);
 
-  if (!mounted || !open || images.length === 0) return null;
-
-  return createPortal(
+  return (
     <div
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[rgba(22,26,51,0.6)] py-8 backdrop-blur-[16px]"
       onClick={handleClose}
@@ -130,7 +119,33 @@ export function WorkImageFullscreen({
           ))}
         </div>
       )}
-    </div>,
+    </div>
+  );
+}
+
+export function WorkImageFullscreen({
+  open,
+  onOpenChange,
+  images,
+  initialIndex = 0,
+  onIndexChange,
+}: WorkImageFullscreenProps) {
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+
+  if (!mounted || !open || images.length === 0) return null;
+
+  return createPortal(
+    <WorkImageFullscreenContent
+      key={initialIndex}
+      images={images}
+      initialIndex={initialIndex}
+      onOpenChange={onOpenChange}
+      onIndexChange={onIndexChange}
+    />,
     document.body
   );
 }
