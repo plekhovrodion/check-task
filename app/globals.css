@@ -106,3 +106,68 @@
       hue-rotate(237deg) brightness(92%) contrast(93%);
   }
 }
+
+.upload-image-crop {
+  --rck-drag-handle-size: 20px;
+  --rck-drag-handle-mobile-size: 28px;
+  --rck-drag-handle-bg-colour: #ffffff;
+  --rck-border-color: #ffffff;
+  --rck-drag-bar-size: 8px;
+  --rck-focus-color: #503ae0;
+}
+
+.upload-image-crop .ReactCropKit {
+  display: block;
+  width: 100%;
+  border-radius: 16px;
+}
+
+.upload-image-crop .ReactCropKit__child-wrapper {
+  border-radius: 16px;
+}
+
+.upload-image-crop .ReactCropKit__child-wrapper > img {
+  display: block;
+  width: 100%;
+  border-radius: 16px;
+}
+
+.upload-image-crop .ReactCropKit__crop-selection {
+  animation: none;
+  background-image: none;
+  border-top: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  border-left: 2px dashed #ffffff;
+  border-right: 2px dashed #ffffff;
+}
+
+.upload-image-crop .ReactCropKit__crop-selection:focus {
+  outline: 2px solid #503ae0;
+  outline-offset: -2px;
+}
+
+.upload-image-crop .ReactCropKit__drag-handle {
+  background-color: #ffffff;
+  border: none;
+  border-radius: 2px;
+}
+
+.upload-image-crop .ReactCropKit .ord-n,
+.upload-image-crop .ReactCropKit .ord-s {
+  width: 32px;
+  height: 6px;
+}
+
+.upload-image-crop .ReactCropKit .ord-e,
+.upload-image-crop .ReactCropKit .ord-w {
+  width: 6px;
+  height: 32px;
+}
+
+.upload-image-crop .ReactCropKit .ord-nw,
+.upload-image-crop .ReactCropKit .ord-ne,
+.upload-image-crop .ReactCropKit .ord-se,
+.upload-image-crop .ReactCropKit .ord-sw {
+  width: 6px;
+  height: 20px;
+}

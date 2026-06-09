@@ -1,3 +1,5 @@
+import { enrichCriteriaWithTextRanges } from "./criterion-highlights";
+import { getCriteria } from "./criteria";
 import type { Assignment, StudentWork } from "./types";
 
 export const MAX_STATIC_ASSIGNMENT_ID = 100;
@@ -72,10 +74,32 @@ export function normalizeAssignmentsForStaticExport(
 
     const works: StudentWork[] = [];
     for (const work of assignment.works) {
-      works.push({
+      let normalizedWork: StudentWork = {
         ...work,
         id: isStaticWorkId(work.id) ? work.id : nextWorkId(works),
-      });
+      };
+
+      if (
+        normalizedWork.review &&
+        normalizedWork.review.criteria.some(
+          (result) => !result.textRanges || result.textRanges.length === 0
+        )
+      ) {
+        const criteriaDefs = getCriteria(assignment.subject, assignment.workType);
+        normalizedWork = {
+          ...normalizedWork,
+          review: {
+            ...normalizedWork.review,
+            criteria: enrichCriteriaWithTextRanges(
+              normalizedWork.review.recognizedText,
+              criteriaDefs,
+              normalizedWork.review.criteria
+            ),
+          },
+        };
+      }
+
+      works.push(normalizedWork);
     }
 
     normalized.push({

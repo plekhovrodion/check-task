@@ -7,7 +7,7 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { PageHeader } from "@/components/layout/page-header";
 import { ProcessingStepper } from "@/components/works/processing-stepper";
 import { WorkViewer } from "@/components/works/work-viewer";
-import { SAMPLE_PAGE_IMAGES } from "@/lib/mock-data";
+import { getWorkMediaItems } from "@/lib/work-images";
 import { useStore } from "@/lib/store";
 
 export function WorkProcessingContent() {
@@ -66,8 +66,7 @@ export function WorkProcessingContent() {
     );
   }
 
-  const images =
-    work.uploadedFiles?.map((f) => f.url) ?? SAMPLE_PAGE_IMAGES;
+  const mediaItems = getWorkMediaItems(work);
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -104,7 +103,7 @@ export function WorkProcessingContent() {
 
       <div className="flex min-h-0 flex-1 overflow-hidden rounded-[24px] bg-white">
         <div className="min-w-0 flex-1">
-          <WorkViewer images={images} />
+          <WorkViewer items={mediaItems} />
         </div>
         <div className="w-px shrink-0 bg-[#e4e6f7]" />
         <div className="w-full max-w-md shrink-0">

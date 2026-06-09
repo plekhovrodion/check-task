@@ -11,13 +11,12 @@ import { useParams, useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
-import { UploadProgressRing } from "@/components/works/upload-progress-ring";
 import {
   UploadStudentCard,
   type UploadFile,
 } from "@/components/works/upload-student-card";
+import { StudentListsDialog } from "@/components/works/student-lists-dialog";
 import { UploadStatusPanel } from "@/components/works/upload-status-panel";
-import { isUploadReorderHintDismissed } from "@/components/works/upload-reorder-hint";
 import { useStore } from "@/lib/store";
 
 interface StudentUpload {
@@ -54,6 +53,7 @@ export function UploadContent() {
   const [invalidNameIds, setInvalidNameIds] = useState<Set<string>>(
     () => new Set()
   );
+  const [listsDialogOpen, setListsDialogOpen] = useState(false);
   const studentRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const uploadedCount = students.filter((s) => s.files.length > 0).length;
@@ -91,8 +91,7 @@ export function UploadContent() {
         if (
           student &&
           files.length > 0 &&
-          prev.find((s) => s.id === studentId)?.files.length === 0 &&
-          !isUploadReorderHintDismissed()
+          prev.find((s) => s.id === studentId)?.files.length === 0
         ) {
           setShowReorderHint(true);
         }
@@ -145,6 +144,57 @@ export function UploadContent() {
     });
   };
 
+  const handleAddStudentsFromLists = useCallback(
+    (names: string[]) => {
+      if (names.length === 0) return;
+
+      let firstFilledId: string | null = null;
+      const timestamp = Date.now();
+
+      setStudents((prev) => {
+        const next = prev.map((student) => ({ ...student }));
+        let nameIndex = 0;
+
+        for (let index = 0; index < next.length && nameIndex < names.length; index++) {
+          if (!next[index].name.trim()) {
+            if (!firstFilledId) {
+              firstFilledId = next[index].id;
+            }
+            next[index] = {
+              ...next[index],
+              name: names[nameIndex],
+            };
+            nameIndex += 1;
+          }
+        }
+
+        while (nameIndex < names.length) {
+          const newId = `upload-${timestamp}-${nameIndex}`;
+          if (!firstFilledId) {
+            firstFilledId = newId;
+          }
+          next.push({
+            id: newId,
+            name: names[nameIndex],
+            files: [],
+            canRemove: true,
+          });
+          nameIndex += 1;
+        }
+
+        return next;
+      });
+
+      if (firstFilledId) {
+        setActiveStudentId(firstFilledId);
+        requestAnimationFrame(() => {
+          scrollToStudent(firstFilledId!);
+        });
+      }
+    },
+    [scrollToStudent]
+  );
+
   const handleCheck = () => {
     if (!assignment) return;
 
@@ -182,29 +232,20 @@ export function UploadContent() {
     );
   }
 
-  const shouldShowHint =
-    hintChecked && showReorderHint && !isUploadReorderHintDismissed();
+  const shouldShowHint = hintChecked && showReorderHint;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       <PageHeader
         breadcrumbs={[
           { label: "ИИ-проверка заданий", href: "/assignments" },
           { label: assignment.title, href: `/assignments/${id}` },
           { label: "Загрузка работ учеников" },
         ]}
-        title="Загрузка работ учеников"
       />
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
         <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[20px] bg-white">
-          <div className="sticky top-0 z-10 flex shrink-0 items-center gap-4 border-b border-[#e4e6f7] bg-white p-6">
-            <UploadProgressRing value={uploadedCount} total={students.length} />
-            <p className="flex-1 text-xl font-medium tracking-[-0.2px]">
-              {uploadedCount}/{students.length} работ учеников загружено
-            </p>
-          </div>
-
           <div className="min-h-0 flex-1 overflow-auto">
             {students.map((student, index) => (
               <div
@@ -248,11 +289,24 @@ export function UploadContent() {
               <Plus />
               Добавить ученика
             </Button>
-            <Button variant="secondary">Из списка</Button>
+            <Button
+              variant="secondary"
+              onClick={() => setListsDialogOpen(true)}
+            >
+              Из списка
+            </Button>
           </div>
         </div>
 
+        <StudentListsDialog
+          open={listsDialogOpen}
+          onOpenChange={setListsDialogOpen}
+          onAddStudents={handleAddStudentsFromLists}
+        />
+
         <UploadStatusPanel
+          uploadedCount={uploadedCount}
+          totalCount={students.length}
           students={statusStudents}
           onSelectStudent={scrollToStudent}
           onCheck={handleCheck}

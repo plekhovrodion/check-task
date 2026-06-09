@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Download, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { NavIcon } from "@/components/layout/nav-icon";
 import { PageHeader } from "@/components/layout/page-header";
 import { HighlightedText } from "@/components/works/highlighted-text";
 import { RecheckWorkDialog } from "@/components/works/recheck-work-dialog";
@@ -17,8 +16,7 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { useStore } from "@/lib/store";
 import { enrichCriteriaWithTextRanges } from "@/lib/criterion-highlights";
 import { getCriteria } from "@/lib/criteria";
-import { getWorkPageImages } from "@/lib/work-images";
-import { cn } from "@/lib/utils";
+import { getWorkMediaItems } from "@/lib/work-images";
 
 export function WorkReviewContent() {
   const params = useParams();
@@ -50,8 +48,9 @@ export function WorkReviewContent() {
       : null;
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success("Ссылка скопирована");
+    const reportUrl = `${window.location.origin}/assignments/${assignmentId}/works/${workId}/report`;
+    navigator.clipboard.writeText(reportUrl);
+    toast.success("Ссылка для ученика скопирована");
   };
 
   const handleRecheck = () => {
@@ -108,13 +107,13 @@ export function WorkReviewContent() {
     );
   }
 
-  const images = getWorkPageImages(work);
+  const mediaItems = getWorkMediaItems(work);
 
   if (isEditingText) {
     return (
       <>
         <TextEditView
-          images={images}
+          items={mediaItems}
           text={work.review.recognizedText}
           onSave={handleSaveText}
         />
@@ -176,6 +175,12 @@ export function WorkReviewContent() {
             <Button variant="ghost" size="icon" aria-label="Скачать">
               <Download />
             </Button>
+            <ButtonLink
+              href={`/assignments/${assignmentId}/works/${workId}/report`}
+              variant="secondary"
+            >
+              Открыть отчёт
+            </ButtonLink>
             <Button onClick={handleCopyLink}>
               Скопировать ссылку для ученика
             </Button>
@@ -185,20 +190,17 @@ export function WorkReviewContent() {
 
       <div className="flex flex-col rounded-[20px] bg-white lg:flex-row">
         <div className="flex min-w-0 flex-col gap-6 p-6 lg:flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-medium tracking-tight">Работа ученика</h2>
             <button
               type="button"
               onClick={() => setIsEditingText(true)}
-              className={cn(
-                "rounded-md p-0.5 transition-colors hover:bg-secondary"
-              )}
-              aria-label="Редактировать текст работы"
+              className="shrink-0 text-base font-medium text-primary transition-colors hover:text-primary/80"
             >
-              <NavIcon name="pen" />
+              Редактировать
             </button>
           </div>
-          <WorkThumbnails images={images} />
+          <WorkThumbnails items={mediaItems} />
           <p className="whitespace-pre-wrap text-base leading-6">
             <HighlightedText
               text={work.review.recognizedText}

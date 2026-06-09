@@ -20,7 +20,7 @@ export function CriteriaPanel({ subject, workType }: CriteriaPanelProps) {
   const summary = getCriteriaSummary(subject, workType);
 
   return (
-    <div className="flex flex-col gap-4 border-[#e4e6f7] p-6 lg:border-l">
+    <div className="flex min-h-0 flex-col gap-4 overflow-y-auto border-[#e4e6f7] p-6 lg:border-l">
       <div>
         <h2 className="text-xl font-medium tracking-[-0.2px]">
           Критерии оценивания

@@ -3,17 +3,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { WorkViewer } from "@/components/works/work-viewer";
+import type { WorkMediaItem } from "@/lib/work-files";
 import { cn } from "@/lib/utils";
 
 interface TextEditViewProps {
-  images: string[];
+  items: WorkMediaItem[];
   text: string;
   onSave: (text: string) => void;
   className?: string;
 }
 
 export function TextEditView({
-  images,
+  items,
   text,
   onSave,
   className,
@@ -31,7 +32,7 @@ export function TextEditView({
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[20px] bg-white lg:flex-row">
         <div className="min-h-[320px] min-w-0 flex-1 lg:min-h-[560px]">
-          <WorkViewer images={images} className="h-full" />
+          <WorkViewer items={items} className="h-full" />
         </div>
 
         <div className="hidden w-px shrink-0 bg-[#e4e6f7] lg:block" />

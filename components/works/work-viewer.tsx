@@ -3,19 +3,22 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PdfViewer } from "@/components/works/pdf-viewer";
 import { WorkImageFullscreen } from "@/components/works/work-image-fullscreen";
+import { WorkMediaThumb } from "@/components/works/work-media-thumb";
+import type { WorkMediaItem } from "@/lib/work-files";
 import { cn } from "@/lib/utils";
 
 interface WorkViewerProps {
-  images: string[];
+  items: WorkMediaItem[];
   className?: string;
 }
 
-export function WorkViewer({ images, className }: WorkViewerProps) {
+export function WorkViewer({ items, className }: WorkViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
 
-  if (images.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-8 text-muted-foreground">
         Нет загруженных страниц
@@ -23,9 +26,10 @@ export function WorkViewer({ images, className }: WorkViewerProps) {
     );
   }
 
+  const currentItem = items[currentIndex];
   const goPrev = () => setCurrentIndex((i) => Math.max(0, i - 1));
   const goNext = () =>
-    setCurrentIndex((i) => Math.min(images.length - 1, i + 1));
+    setCurrentIndex((i) => Math.min(items.length - 1, i + 1));
 
   return (
     <>
@@ -46,19 +50,29 @@ export function WorkViewer({ images, className }: WorkViewerProps) {
               <ChevronLeft />
             </Button>
           )}
-          <button
-            type="button"
-            className="flex max-h-full max-w-full cursor-zoom-in items-center justify-center"
-            onClick={() => setFullscreenOpen(true)}
-            aria-label="Открыть фото на весь экран"
-          >
-            <img
-              src={images[currentIndex]}
-              alt={`Страница ${currentIndex + 1}`}
-              className="max-h-full max-w-full rounded-[20px] object-contain"
-            />
-          </button>
-          {currentIndex < images.length - 1 && (
+          {currentItem.type === "pdf" ? (
+            <div className="flex h-full w-full max-w-3xl items-stretch">
+              <PdfViewer
+                url={currentItem.url}
+                title={currentItem.name ?? `PDF ${currentIndex + 1}`}
+                className="min-h-[400px] flex-1"
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="flex max-h-full max-w-full cursor-zoom-in items-center justify-center"
+              onClick={() => setFullscreenOpen(true)}
+              aria-label="Открыть фото на весь экран"
+            >
+              <img
+                src={currentItem.url}
+                alt={currentItem.name ?? `Страница ${currentIndex + 1}`}
+                className="max-h-full max-w-full rounded-[20px] object-contain"
+              />
+            </button>
+          )}
+          {currentIndex < items.length - 1 && (
             <Button
               variant="secondary"
               size="icon"
@@ -71,22 +85,17 @@ export function WorkViewer({ images, className }: WorkViewerProps) {
         </div>
 
         <div className="flex items-center justify-center gap-2">
-          {images.map((img, index) => (
+          {items.map((item, index) => (
             <button
               key={index}
               type="button"
               onClick={() => setCurrentIndex(index)}
-              className={cn(
-                "size-16 overflow-hidden rounded-lg transition-colors",
-                index === currentIndex
-                  ? "border-2 border-primary"
-                  : "border border-[#e4e6f7]"
-              )}
+              aria-label={`Файл ${index + 1}`}
             >
-              <img
-                src={img}
-                alt={`Миниатюра ${index + 1}`}
-                className="size-full object-cover"
+              <WorkMediaThumb
+                item={item}
+                index={index}
+                active={index === currentIndex}
               />
             </button>
           ))}
@@ -96,7 +105,7 @@ export function WorkViewer({ images, className }: WorkViewerProps) {
       <WorkImageFullscreen
         open={fullscreenOpen}
         onOpenChange={setFullscreenOpen}
-        images={images}
+        items={items}
         initialIndex={currentIndex}
         onIndexChange={setCurrentIndex}
       />

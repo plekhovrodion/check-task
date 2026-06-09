@@ -3,25 +3,28 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { NavIcon } from "@/components/layout/nav-icon";
+import { PdfViewer } from "@/components/works/pdf-viewer";
+import { WorkMediaThumb } from "@/components/works/work-media-thumb";
+import type { WorkMediaItem } from "@/lib/work-files";
 import { cn } from "@/lib/utils";
 
 interface WorkImageFullscreenProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  images: string[];
+  items: WorkMediaItem[];
   initialIndex?: number;
   onIndexChange?: (index: number) => void;
 }
 
 interface WorkImageFullscreenContentProps {
-  images: string[];
+  items: WorkMediaItem[];
   initialIndex: number;
   onOpenChange: (open: boolean) => void;
   onIndexChange?: (index: number) => void;
 }
 
 function WorkImageFullscreenContent({
-  images,
+  items,
   initialIndex,
   onOpenChange,
   onIndexChange,
@@ -46,7 +49,7 @@ function WorkImageFullscreenContent({
         setCurrentIndex((index) => Math.max(0, index - 1));
       }
       if (event.key === "ArrowRight") {
-        setCurrentIndex((index) => Math.min(images.length - 1, index + 1));
+        setCurrentIndex((index) => Math.min(items.length - 1, index + 1));
       }
     };
 
@@ -57,7 +60,9 @@ function WorkImageFullscreenContent({
       document.body.style.overflow = "";
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [images.length, handleClose]);
+  }, [items.length, handleClose]);
+
+  const currentItem = items[currentIndex];
 
   return (
     <div
@@ -65,7 +70,7 @@ function WorkImageFullscreenContent({
       onClick={handleClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Просмотр фото на весь экран"
+      aria-label="Просмотр файлов на весь экран"
     >
       <button
         type="button"
@@ -80,41 +85,53 @@ function WorkImageFullscreenContent({
       </button>
 
       <div
-        className="flex max-h-[calc(100vh-160px)] max-w-[min(90vw,744px)] items-center justify-center px-4"
+        className={cn(
+          "flex items-center justify-center px-4",
+          currentItem.type === "pdf"
+            ? "h-[calc(100vh-160px)] w-[min(90vw,900px)]"
+            : "max-h-[calc(100vh-160px)] max-w-[min(90vw,744px)]"
+        )}
         onClick={(event) => event.stopPropagation()}
       >
-        <img
-          src={images[currentIndex]}
-          alt={`Страница ${currentIndex + 1}`}
-          className="max-h-[calc(100vh-160px)] max-w-full rounded-2xl object-contain"
-        />
+        {currentItem.type === "pdf" ? (
+          <PdfViewer
+            url={currentItem.url}
+            title={currentItem.name ?? `PDF ${currentIndex + 1}`}
+            className="h-full w-full rounded-2xl"
+          />
+        ) : (
+          <img
+            src={currentItem.url}
+            alt={currentItem.name ?? `Страница ${currentIndex + 1}`}
+            className="max-h-[calc(100vh-160px)] max-w-full rounded-2xl object-contain"
+          />
+        )}
       </div>
 
-      {images.length > 1 && (
+      {items.length > 1 && (
         <div
           className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2"
           onClick={(event) => event.stopPropagation()}
         >
-          {images.map((image, index) => (
+          {items.map((item, index) => (
             <button
               key={index}
               type="button"
               onClick={() => setCurrentIndex(index)}
               className={cn(
-                "relative size-12 overflow-hidden rounded-[10px] transition-opacity",
+                "relative transition-opacity",
                 index !== currentIndex && "opacity-80"
               )}
-              aria-label={`Страница ${index + 1}`}
+              aria-label={`Файл ${index + 1}`}
               aria-current={index === currentIndex}
             >
-              <img
-                src={image}
-                alt=""
-                className="size-full object-cover"
+              <WorkMediaThumb
+                item={item}
+                index={index}
+                size="sm"
+                active={index === currentIndex}
+                className="size-12 rounded-[10px]"
               />
-              {index !== currentIndex && (
-                <span className="absolute inset-0 rounded-[10px] bg-black/20" />
-              )}
             </button>
           ))}
         </div>
@@ -126,7 +143,7 @@ function WorkImageFullscreenContent({
 export function WorkImageFullscreen({
   open,
   onOpenChange,
-  images,
+  items,
   initialIndex = 0,
   onIndexChange,
 }: WorkImageFullscreenProps) {
@@ -136,12 +153,12 @@ export function WorkImageFullscreen({
     () => false
   );
 
-  if (!mounted || !open || images.length === 0) return null;
+  if (!mounted || !open || items.length === 0) return null;
 
   return createPortal(
     <WorkImageFullscreenContent
       key={initialIndex}
-      images={images}
+      items={items}
       initialIndex={initialIndex}
       onOpenChange={onOpenChange}
       onIndexChange={onIndexChange}

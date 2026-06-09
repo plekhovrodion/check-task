@@ -2,26 +2,28 @@
 
 import { useState } from "react";
 import { WorkImageFullscreen } from "@/components/works/work-image-fullscreen";
+import { WorkMediaThumb } from "@/components/works/work-media-thumb";
+import type { WorkMediaItem } from "@/lib/work-files";
 import { cn } from "@/lib/utils";
 
 interface WorkThumbnailsProps {
-  images: string[];
+  items: WorkMediaItem[];
   className?: string;
   compact?: boolean;
 }
 
 export function WorkThumbnails({
-  images,
+  items,
   className,
   compact = false,
 }: WorkThumbnailsProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
 
-  if (images.length === 0) return null;
+  if (items.length === 0) return null;
 
-  const displayImages = compact ? images.slice(0, 3) : images;
-  const remainingCount = compact ? images.length - displayImages.length : 0;
+  const displayItems = compact ? items.slice(0, 3) : items;
+  const remainingCount = compact ? items.length - displayItems.length : 0;
 
   return (
     <>
@@ -29,7 +31,7 @@ export function WorkThumbnails({
         className={cn("flex flex-wrap gap-2", className)}
         onClick={compact ? (event) => event.stopPropagation() : undefined}
       >
-        {displayImages.map((image, index) => (
+        {displayItems.map((item, index) => (
           <button
             key={index}
             type="button"
@@ -37,22 +39,13 @@ export function WorkThumbnails({
               setCurrentIndex(index);
               setFullscreenOpen(true);
             }}
-            className={cn(
-              "relative shrink-0 overflow-hidden rounded-lg border border-[#e4e6f7]",
-              compact ? "size-10" : "size-24"
-            )}
-            aria-label={`Страница ${index + 1}`}
+            aria-label={`Файл ${index + 1}`}
           >
-            <img
-              src={image}
-              alt={`Страница ${index + 1}`}
-              className="size-full object-cover"
+            <WorkMediaThumb
+              item={item}
+              index={index}
+              size={compact ? "sm" : "md"}
             />
-            {!compact && (
-              <span className="absolute bottom-[3px] left-[3px] flex min-w-5 items-center justify-center rounded-full bg-[rgba(22,26,51,0.6)] px-1 text-sm font-medium text-white backdrop-blur-[2px]">
-                {index + 1}
-              </span>
-            )}
           </button>
         ))}
         {remainingCount > 0 && (
@@ -65,7 +58,7 @@ export function WorkThumbnails({
       <WorkImageFullscreen
         open={fullscreenOpen}
         onOpenChange={setFullscreenOpen}
-        images={images}
+        items={items}
         initialIndex={currentIndex}
         onIndexChange={setCurrentIndex}
       />

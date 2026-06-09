@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { NavIcon } from "@/components/layout/nav-icon";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { getCriteria } from "@/lib/criteria";
@@ -48,40 +48,23 @@ function ScoreBadge({
   );
 }
 
-function EditButton({
-  active,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-}) {
+function EditButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        "rounded-md p-0.5 transition-colors hover:bg-secondary",
-        active && "bg-secondary"
-      )}
-      aria-label={label}
-      aria-pressed={active}
+      className="shrink-0 text-base font-medium text-primary transition-colors hover:text-primary/80"
     >
-      <NavIcon name="pen" />
+      Редактировать
     </button>
   );
 }
 
 function SaveButton({ onClick }: { onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground"
-    >
+    <Button type="button" onClick={onClick} className="h-9 px-4">
       Сохранить
-    </button>
+    </Button>
   );
 }
 
@@ -132,14 +115,10 @@ export function ReviewPanel({
   return (
     <div className={cn("flex flex-col gap-6", className)}>
       <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-4">
           <h2 className="text-xl font-medium tracking-tight">Обратная связь</h2>
           {onReviewChange && !editingFeedback && (
-            <EditButton
-              active={false}
-              label="Редактировать обратную связь"
-              onClick={() => setEditingFeedback(true)}
-            />
+            <EditButton onClick={() => setEditingFeedback(true)} />
           )}
           {onReviewChange && editingFeedback && (
             <SaveButton onClick={() => setEditingFeedback(false)} />
@@ -162,16 +141,12 @@ export function ReviewPanel({
       <div className="h-px bg-[#e4e6f7]" />
 
       <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-4">
           <h2 className="text-xl font-medium tracking-tight">
             Критерии оценивания
           </h2>
           {onReviewChange && !editingCriteria && (
-            <EditButton
-              active={false}
-              label="Редактировать критерии"
-              onClick={() => setEditingCriteria(true)}
-            />
+            <EditButton onClick={() => setEditingCriteria(true)} />
           )}
           {onReviewChange && editingCriteria && (
             <SaveButton onClick={() => setEditingCriteria(false)} />

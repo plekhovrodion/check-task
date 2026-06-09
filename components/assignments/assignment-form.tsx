@@ -57,12 +57,11 @@ export function AssignmentForm() {
           { label: "ИИ-проверка заданий", href: "/assignments" },
           { label: "Создание задания" },
         ]}
-        title="Создание задания"
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[20px] bg-white">
-        <div className="grid min-h-0 flex-1 grid-cols-1 overflow-auto lg:grid-cols-2">
-          <div className="flex flex-col gap-6 p-6">
+        <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-2">
+          <div className="flex min-h-0 flex-col gap-6 overflow-y-auto p-6">
             <div className="flex flex-col gap-2">
               <FormLabel required>Название задания</FormLabel>
               <div className="relative">

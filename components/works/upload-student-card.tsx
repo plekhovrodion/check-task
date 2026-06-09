@@ -18,10 +18,12 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { FileText, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { NavIcon } from "@/components/layout/nav-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PdfPreviewThumb } from "@/components/works/pdf-preview-thumb";
+import { PdfViewerDialog } from "@/components/works/pdf-viewer-dialog";
 import { UploadImageDialog } from "@/components/works/upload-image-dialog";
 import { UploadReorderHint } from "@/components/works/upload-reorder-hint";
 import { cn } from "@/lib/utils";
@@ -93,10 +95,13 @@ function SortableFileThumb({
       {...listeners}
     >
       {isPdf ? (
-        <div className="flex size-full cursor-grab flex-col items-center justify-center gap-1 bg-secondary text-muted-foreground active:cursor-grabbing">
-          <FileText className="size-8" />
-          <span className="max-w-full truncate px-1 text-xs">PDF</span>
-        </div>
+        <button
+          type="button"
+          className="size-full cursor-grab active:cursor-grabbing"
+          onClick={onPreview}
+        >
+          <PdfPreviewThumb url={file.url} />
+        </button>
       ) : (
         <button
           type="button"
@@ -232,15 +237,15 @@ export function UploadStudentCard({
   );
 
   return (
-    <div className="border-b border-[#e4e6f7] bg-white p-6">
-      <div className="mb-3 flex items-center justify-between gap-4">
+    <div className="flex flex-col gap-3 border-b border-[#e4e6f7] bg-white p-6">
+      <div className="flex items-center justify-between gap-4">
         <Input
           value={studentName}
           onChange={(e) => onNameChange(e.target.value)}
-          placeholder="Введите ученика"
+          placeholder="Имя ученика"
           aria-invalid={nameInvalid}
           className={cn(
-            "h-12 max-w-[320px] rounded-[10px] border-none bg-secondary px-4 text-base shadow-none placeholder:text-muted-foreground md:text-base",
+            "h-10 w-[240px] rounded-lg border-none bg-secondary px-3.5 text-sm shadow-none placeholder:text-foreground md:text-sm",
             nameInvalid &&
               "border border-destructive bg-destructive/10 ring-3 ring-destructive/20"
           )}
@@ -326,6 +331,17 @@ export function UploadStudentCard({
           e.target.value = "";
         }}
       />
+
+      {previewFile && previewFile.name.match(/\.pdf$/i) && (
+        <PdfViewerDialog
+          open={previewFile !== null}
+          onOpenChange={(open) => {
+            if (!open) setPreviewFile(null);
+          }}
+          url={previewFile.url}
+          fileName={previewFile.name}
+        />
+      )}
 
       {previewFile && !previewFile.name.match(/\.pdf$/i) && (
         <UploadImageDialog
