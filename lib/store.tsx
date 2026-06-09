@@ -14,6 +14,11 @@ import { INITIAL_ASSIGNMENTS, SAMPLE_REVIEW } from "./mock-data";
 import { getMaxScore } from "./criteria";
 import { calcScoredTotal } from "./review-utils";
 import { getUploadedPageImages } from "./work-images";
+import {
+  nextAssignmentId,
+  nextWorkId,
+  normalizeAssignmentsForStaticExport,
+} from "./static-paths";
 import { loadStoreCache, saveStoreCache } from "./store-cache";
 import type {
   Assignment,
@@ -57,14 +62,14 @@ interface StoreContextValue {
 
 const StoreContext = createContext<StoreContextValue | null>(null);
 
-function generateId() {
-  return Math.random().toString(36).slice(2, 11);
-}
-
 function getInitialStoreState() {
   const cached = loadStoreCache();
+  const assignments = normalizeAssignmentsForStaticExport(
+    cached?.assignments ?? INITIAL_ASSIGNMENTS
+  );
+
   return {
-    assignments: cached?.assignments ?? INITIAL_ASSIGNMENTS,
+    assignments,
     showEmptyState: cached?.showEmptyState ?? false,
   };
 }
@@ -98,16 +103,19 @@ function StoreProviderClient({ children }: { children: ReactNode }) {
     [assignments]
   );
 
-  const createAssignment = useCallback((data: AssignmentFormData) => {
-    const assignment: Assignment = {
-      id: generateId(),
-      ...data,
-      works: [],
-      createdAt: new Date().toISOString(),
-    };
-    setAssignments((prev) => [assignment, ...prev]);
-    return assignment;
-  }, [setAssignments]);
+  const createAssignment = useCallback(
+    (data: AssignmentFormData) => {
+      const assignment: Assignment = {
+        id: nextAssignmentId(assignments),
+        ...data,
+        works: [],
+        createdAt: new Date().toISOString(),
+      };
+      setAssignments((prev) => [assignment, ...prev]);
+      return assignment;
+    },
+    [assignments, setAssignments]
+  );
 
   const updateAssignment = useCallback(
     (id: string, data: Partial<Assignment>) => {
@@ -160,17 +168,19 @@ function StoreProviderClient({ children }: { children: ReactNode }) {
 
   const addStudentToAssignment = useCallback(
     (assignmentId: string, name: string) => {
-      const work: StudentWork = {
-        id: generateId(),
-        studentName: name,
-        status: "pending",
-      };
       setAssignments((prev) =>
-        prev.map((a) =>
-          a.id === assignmentId ? { ...a, works: [...a.works, work] } : a
-        )
+        prev.map((a) => {
+          if (a.id !== assignmentId) return a;
+
+          const work: StudentWork = {
+            id: nextWorkId(a.works),
+            studentName: name,
+            status: "pending",
+          };
+
+          return { ...a, works: [...a.works, work] };
+        })
       );
-      return work;
     },
     [setAssignments]
   );
@@ -204,7 +214,7 @@ function StoreProviderClient({ children }: { children: ReactNode }) {
               };
             } else {
               works.push({
-                id: generateId(),
+                id: nextWorkId(works),
                 studentName: upload.studentName,
                 ...workData,
               });
