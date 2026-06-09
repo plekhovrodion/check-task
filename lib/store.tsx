@@ -11,7 +11,8 @@ import {
   type ReactNode,
 } from "react";
 import { INITIAL_ASSIGNMENTS, SAMPLE_REVIEW } from "./mock-data";
-import { getMaxScore } from "./criteria";
+import { getMaxScore, getCriteria } from "./criteria";
+import { enrichCriteriaWithTextRanges } from "./criterion-highlights";
 import { calcScoredTotal } from "./review-utils";
 import { getUploadedPageImages } from "./work-images";
 import {
@@ -249,11 +250,26 @@ function StoreProviderClient({ children }: { children: ReactNode }) {
               if (work.id !== workId) return work;
 
               const pageImages = getUploadedPageImages(work);
+              const recognizedText =
+                work.review?.recognizedText ?? SAMPLE_REVIEW.recognizedText;
+              const criteriaDefs = getCriteria(
+                assignment.subject,
+                assignment.workType
+              );
               const review = {
                 ...SAMPLE_REVIEW,
                 maxScore,
+                recognizedText,
                 pageImages:
-                  pageImages.length > 0 ? pageImages : SAMPLE_REVIEW.pageImages,
+                  work.review?.pageImages ??
+                  (pageImages.length > 0
+                    ? pageImages
+                    : SAMPLE_REVIEW.pageImages),
+                criteria: enrichCriteriaWithTextRanges(
+                  recognizedText,
+                  criteriaDefs,
+                  SAMPLE_REVIEW.criteria
+                ),
               };
 
               return {
@@ -337,11 +353,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return (
       <StoreContext.Provider
         value={{
-          assignments: INITIAL_ASSIGNMENTS,
+          assignments: [],
           showEmptyState: false,
           setShowEmptyState: () => {},
           getAssignment: () => undefined,
-          createAssignment: () => INITIAL_ASSIGNMENTS[0],
+          createAssignment: () => ({
+            id: "1",
+            title: "",
+            subject: "russian",
+            workType: "ege",
+            grade: "",
+            works: [],
+            createdAt: new Date().toISOString(),
+          }),
           updateAssignment: () => {},
           deleteAssignment: () => {},
           getWork: () => undefined,

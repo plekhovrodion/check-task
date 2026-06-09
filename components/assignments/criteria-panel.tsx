@@ -49,7 +49,7 @@ export function CriteriaPanel({ subject, workType }: CriteriaPanelProps) {
                 </span>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4 text-base text-muted-foreground">
+            <AccordionContent className="px-4 pb-4 text-base whitespace-pre-wrap text-muted-foreground">
               {criterion.description ??
                 `Критерий оценивания по ${WORK_TYPE_LABELS[workType]} для предмета «${SUBJECT_LABELS[subject]}».`}
             </AccordionContent>

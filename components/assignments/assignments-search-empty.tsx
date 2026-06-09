@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { assetPath } from "@/lib/asset-path";
 
 interface AssignmentsSearchEmptyProps {
   query: string;
@@ -16,7 +17,7 @@ export function AssignmentsSearchEmpty({
     <div className="flex flex-col items-center gap-4 py-16">
       <div className="flex flex-col items-center">
         <Image
-          src="/images/calendar-inactive.png"
+          src={assetPath("/images/calendar-inactive.png")}
           alt=""
           width={80}
           height={80}

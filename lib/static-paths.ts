@@ -1,4 +1,3 @@
-import { INITIAL_ASSIGNMENTS } from "./mock-data";
 import type { Assignment, StudentWork } from "./types";
 
 export const MAX_STATIC_ASSIGNMENT_ID = 100;
@@ -20,15 +19,6 @@ export function getWorkStaticParams() {
         id,
         workId: `w${workIndex + 1}`,
       });
-    }
-  }
-
-  for (const assignment of INITIAL_ASSIGNMENTS) {
-    for (const work of assignment.works) {
-      const key = `${assignment.id}:${work.id}`;
-      if (!params.some((param) => `${param.id}:${param.workId}` === key)) {
-        params.push({ id: assignment.id, workId: work.id });
-      }
     }
   }
 

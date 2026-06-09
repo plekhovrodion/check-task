@@ -13,6 +13,8 @@ interface ReviewPanelProps {
   assignment: Assignment;
   review: ReviewResult;
   onReviewChange?: (review: ReviewResult) => void;
+  hoveredCriterionId?: string | null;
+  onCriterionHover?: (criterionId: string | null) => void;
   className?: string;
 }
 
@@ -71,10 +73,24 @@ function EditButton({
   );
 }
 
+function SaveButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground"
+    >
+      Сохранить
+    </button>
+  );
+}
+
 export function ReviewPanel({
   assignment,
   review,
   onReviewChange,
+  hoveredCriterionId = null,
+  onCriterionHover,
   className,
 }: ReviewPanelProps) {
   const criteria = getCriteria(assignment.subject, assignment.workType);
@@ -118,12 +134,15 @@ export function ReviewPanel({
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-medium tracking-tight">Обратная связь</h2>
-          {onReviewChange && (
+          {onReviewChange && !editingFeedback && (
             <EditButton
-              active={editingFeedback}
+              active={false}
               label="Редактировать обратную связь"
-              onClick={() => setEditingFeedback((value) => !value)}
+              onClick={() => setEditingFeedback(true)}
             />
+          )}
+          {onReviewChange && editingFeedback && (
+            <SaveButton onClick={() => setEditingFeedback(false)} />
           )}
         </div>
         {editingFeedback ? (
@@ -144,24 +163,19 @@ export function ReviewPanel({
 
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-2">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <h2 className="text-xl font-medium tracking-tight">
-              Критерии оценивания
-            </h2>
-            {onReviewChange && (
-              <EditButton
-                active={editingCriteria}
-                label="Редактировать критерии"
-                onClick={() => setEditingCriteria((value) => !value)}
-              />
-            )}
-          </div>
-          <button
-            type="button"
-            className="shrink-0 text-base font-medium text-muted-foreground"
-          >
-            Показать критерии
-          </button>
+          <h2 className="text-xl font-medium tracking-tight">
+            Критерии оценивания
+          </h2>
+          {onReviewChange && !editingCriteria && (
+            <EditButton
+              active={false}
+              label="Редактировать критерии"
+              onClick={() => setEditingCriteria(true)}
+            />
+          )}
+          {onReviewChange && editingCriteria && (
+            <SaveButton onClick={() => setEditingCriteria(false)} />
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -181,7 +195,14 @@ export function ReviewPanel({
             return (
               <div
                 key={result.criterionId}
-                className="flex items-start gap-2 rounded-2xl border border-[#e4e6f7] p-4"
+                className={cn(
+                  "flex items-start gap-2 rounded-2xl border p-4 transition-colors",
+                  hoveredCriterionId === result.criterionId
+                    ? "border-primary bg-[#f0f2ff]"
+                    : "border-[#e4e6f7]"
+                )}
+                onMouseEnter={() => onCriterionHover?.(result.criterionId)}
+                onMouseLeave={() => onCriterionHover?.(null)}
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <p className="text-lg font-medium tracking-tight">
@@ -236,6 +257,13 @@ export function ReviewPanel({
             );
           })}
         </div>
+
+        <button
+          type="button"
+          className="self-start text-base font-medium text-muted-foreground"
+        >
+          Показать критерии
+        </button>
       </div>
     </div>
   );

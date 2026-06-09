@@ -18,12 +18,13 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { NavIcon, type NavIconName } from "@/components/layout/nav-icon";
+import { assetPath } from "@/lib/asset-path";
 import { cn } from "@/lib/utils";
 
 function Logo() {
   return (
     <Image
-      src="/logo_ap.svg"
+      src={assetPath("/logo_ap.svg")}
       alt="Ассистент Преподавателя"
       width={144}
       height={40}
@@ -155,7 +156,7 @@ export function AppSidebar() {
       <SidebarFooter className="mt-auto p-0">
         <div className="flex items-center gap-2">
           <Avatar className="size-10 rounded-lg">
-            <AvatarImage src="/images/profile.png" />
+            <AvatarImage src={assetPath("/images/profile.png")} />
             <AvatarFallback>ПЛ</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { assetPath } from "@/lib/asset-path";
 import type { WorkStatus } from "@/lib/types";
 
 const STATUS_CONFIG: Record<
@@ -10,7 +11,7 @@ const STATUS_CONFIG: Record<
     label: "Проверено",
     icon: (
       <Image
-        src="/icons/success.svg"
+        src={assetPath("/icons/success.svg")}
         alt=""
         width={20}
         height={20}

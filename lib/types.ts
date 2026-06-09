@@ -10,12 +10,18 @@ export interface Criterion {
   description?: string;
 }
 
+export interface TextRange {
+  start: number;
+  end: number;
+}
+
 export interface CriterionResult {
   criterionId: string;
   score: number;
   maxScore: number;
   description: string;
   errors?: string[];
+  textRanges?: TextRange[];
 }
 
 export interface ReviewResult {

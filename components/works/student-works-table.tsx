@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DeleteWorkDialog } from "@/components/works/delete-work-dialog";
+import { WorkPreviewThumb } from "@/components/works/work-preview-thumb";
 import { NavIcon } from "@/components/layout/nav-icon";
 import { Button } from "@/components/ui/button";
 import { WorkStatusBadge } from "./work-status-badge";
 import { useStore } from "@/lib/store";
 import type { Assignment, StudentWork } from "@/lib/types";
+import { getWorkPageImages } from "@/lib/work-images";
 import { cn } from "@/lib/utils";
 
 interface StudentWorksTableProps {
@@ -67,6 +69,7 @@ export function StudentWorksTable({ assignment }: StudentWorksTableProps) {
               work.score !== undefined &&
               work.maxScore !== undefined &&
               work.status === "checked";
+            const previewImage = getWorkPageImages(work)[0];
 
             return (
               <div
@@ -77,8 +80,11 @@ export function StudentWorksTable({ assignment }: StudentWorksTableProps) {
                 )}
                 onClick={() => handleRowClick(work)}
               >
-                <div className="w-[420px] shrink-0 truncate font-medium">
-                  {work.studentName}
+                <div className="flex w-[420px] shrink-0 items-center gap-3 min-w-0">
+                  <WorkPreviewThumb src={previewImage} />
+                  <span className="min-w-0 flex-1 truncate font-medium">
+                    {work.studentName}
+                  </span>
                 </div>
 
                 <div className="min-w-0 flex-1">

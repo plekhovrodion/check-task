@@ -1,25 +1,26 @@
 import Image from "next/image";
+import { assetPath } from "@/lib/asset-path";
 import { cn } from "@/lib/utils";
 
 export const NAV_ICONS = {
-  main: "/icons/nav/ic_stroke_main.svg",
-  ai: "/icons/nav/button-icon.svg",
-  materials: "/icons/nav/ic_stroke_materials.svg",
-  plus: "/icons/nav/ic_stroke_plus.svg",
-  calendar: "/icons/nav/ic_stroke_calendar.svg",
-  calendarToggle: "/icons/nav/calendar-icon.svg",
-  smile: "/icons/nav/ic_stroke_smile.svg",
-  quiz: "/icons/nav/ic_stroke_quiz.svg",
-  arrowUpRight: "/icons/nav/ic_stroke_arrow_up_right.svg",
-  analysisVoice: "/icons/nav/ic_stroke_analysis_voice.svg",
-  statistics: "/icons/nav/ic_stroke_statistics.svg",
-  penBrand: "/icons/nav/ic_stroke_pen_brand.svg",
-  pen: "/icons/nav/ic_stroke_pen.svg",
-  ratings: "/icons/nav/ic_stroke_question_ratings.svg",
-  performance: "/icons/nav/ic_stroke_performance.svg",
-  search: "/icons/nav/ic_stroke_magnifying_glass.svg",
-  trash: "/icons/nav/ic_stroke_trash_bin.svg",
-  cross: "/icons/nav/ic_stroke_cross.svg",
+  main: assetPath("/icons/nav/ic_stroke_main.svg"),
+  ai: assetPath("/icons/nav/button-icon.svg"),
+  materials: assetPath("/icons/nav/ic_stroke_materials.svg"),
+  plus: assetPath("/icons/nav/ic_stroke_plus.svg"),
+  calendar: assetPath("/icons/nav/ic_stroke_calendar.svg"),
+  calendarToggle: assetPath("/icons/nav/calendar-icon.svg"),
+  smile: assetPath("/icons/nav/ic_stroke_smile.svg"),
+  quiz: assetPath("/icons/nav/ic_stroke_quiz.svg"),
+  arrowUpRight: assetPath("/icons/nav/ic_stroke_arrow_up_right.svg"),
+  analysisVoice: assetPath("/icons/nav/ic_stroke_analysis_voice.svg"),
+  statistics: assetPath("/icons/nav/ic_stroke_statistics.svg"),
+  penBrand: assetPath("/icons/nav/ic_stroke_pen_brand.svg"),
+  pen: assetPath("/icons/nav/ic_stroke_pen.svg"),
+  ratings: assetPath("/icons/nav/ic_stroke_question_ratings.svg"),
+  performance: assetPath("/icons/nav/ic_stroke_performance.svg"),
+  search: assetPath("/icons/nav/ic_stroke_magnifying_glass.svg"),
+  trash: assetPath("/icons/nav/ic_stroke_trash_bin.svg"),
+  cross: assetPath("/icons/nav/ic_stroke_cross.svg"),
 } as const;
 
 export type NavIconName = keyof typeof NAV_ICONS;
