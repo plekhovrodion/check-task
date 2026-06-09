@@ -1,14 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { NavIcon } from "@/components/layout/nav-icon";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { getCriteria } from "@/lib/criteria";
-import type { Assignment, ReviewResult } from "@/lib/types";
+import { calcScoredTotal } from "@/lib/review-utils";
+import type { Assignment, CriterionResult, ReviewResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface ReviewPanelProps {
   assignment: Assignment;
   review: ReviewResult;
+  onReviewChange?: (review: ReviewResult) => void;
   className?: string;
 }
 
@@ -42,17 +46,98 @@ function ScoreBadge({
   );
 }
 
-export function ReviewPanel({ assignment, review, className }: ReviewPanelProps) {
+function EditButton({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-md p-0.5 transition-colors hover:bg-secondary",
+        active && "bg-secondary"
+      )}
+      aria-label={label}
+      aria-pressed={active}
+    >
+      <NavIcon name="pen" />
+    </button>
+  );
+}
+
+export function ReviewPanel({
+  assignment,
+  review,
+  onReviewChange,
+  className,
+}: ReviewPanelProps) {
   const criteria = getCriteria(assignment.subject, assignment.workType);
+  const [editingFeedback, setEditingFeedback] = useState(false);
+  const [editingCriteria, setEditingCriteria] = useState(false);
+
+  const updateReview = (patch: Partial<ReviewResult>) => {
+    if (!onReviewChange) return;
+
+    const nextReview = { ...review, ...patch };
+    if (patch.criteria) {
+      nextReview.totalScore = calcScoredTotal(patch.criteria);
+    }
+
+    onReviewChange(nextReview);
+  };
+
+  const updateCriterion = (
+    criterionId: string,
+    patch: Partial<CriterionResult>
+  ) => {
+    const nextCriteria = review.criteria.map((result) => {
+      if (result.criterionId !== criterionId) return result;
+
+      const nextResult = { ...result, ...patch };
+      if (patch.score !== undefined && result.maxScore > 0) {
+        nextResult.score = Math.min(
+          Math.max(0, patch.score),
+          result.maxScore
+        );
+      }
+
+      return nextResult;
+    });
+
+    updateReview({ criteria: nextCriteria });
+  };
 
   return (
     <div className={cn("flex flex-col gap-6", className)}>
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-medium tracking-tight">Обратная связь</h2>
-          <NavIcon name="pen" />
+          {onReviewChange && (
+            <EditButton
+              active={editingFeedback}
+              label="Редактировать обратную связь"
+              onClick={() => setEditingFeedback((value) => !value)}
+            />
+          )}
         </div>
-        <p className="text-base leading-6">{review.feedback}</p>
+        {editingFeedback ? (
+          <textarea
+            value={review.feedback}
+            onChange={(event) =>
+              updateReview({ feedback: event.target.value })
+            }
+            rows={5}
+            className="w-full resize-y rounded-2xl border border-[#e4e6f7] bg-transparent px-4 py-3 text-base leading-6 outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          />
+        ) : (
+          <p className="text-base leading-6">{review.feedback}</p>
+        )}
       </div>
 
       <div className="h-px bg-[#e4e6f7]" />
@@ -63,7 +148,13 @@ export function ReviewPanel({ assignment, review, className }: ReviewPanelProps)
             <h2 className="text-xl font-medium tracking-tight">
               Критерии оценивания
             </h2>
-            <NavIcon name="pen" />
+            {onReviewChange && (
+              <EditButton
+                active={editingCriteria}
+                label="Редактировать критерии"
+                onClick={() => setEditingCriteria((value) => !value)}
+              />
+            )}
           </div>
           <button
             type="button"
@@ -98,7 +189,20 @@ export function ReviewPanel({ assignment, review, className }: ReviewPanelProps)
                       ? `${criterion.code}. ${criterion.title}`
                       : result.criterionId}
                   </p>
-                  <p className="text-base leading-6">{result.description}</p>
+                  {editingCriteria ? (
+                    <textarea
+                      value={result.description}
+                      onChange={(event) =>
+                        updateCriterion(result.criterionId, {
+                          description: event.target.value,
+                        })
+                      }
+                      rows={3}
+                      className="w-full resize-y rounded-xl border border-[#e4e6f7] bg-transparent px-3 py-2 text-base leading-6 outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    />
+                  ) : (
+                    <p className="text-base leading-6">{result.description}</p>
+                  )}
                   {result.errors && result.errors.length > 0 && (
                     <ul className="list-disc pl-6 text-base leading-6">
                       {result.errors.map((err) => (
@@ -107,7 +211,27 @@ export function ReviewPanel({ assignment, review, className }: ReviewPanelProps)
                     </ul>
                   )}
                 </div>
-                <ScoreBadge score={result.score} maxScore={result.maxScore} />
+                {editingCriteria && result.maxScore > 0 ? (
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={result.maxScore}
+                      value={result.score}
+                      onChange={(event) =>
+                        updateCriterion(result.criterionId, {
+                          score: Number(event.target.value),
+                        })
+                      }
+                      className="h-9 w-14 px-2 text-center"
+                    />
+                    <span className="text-base text-muted-foreground">
+                      /{result.maxScore}
+                    </span>
+                  </div>
+                ) : (
+                  <ScoreBadge score={result.score} maxScore={result.maxScore} />
+                )}
               </div>
             );
           })}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Star } from "lucide-react";
+import { StarSolidIcon } from "@/components/ui/star-solid-icon";
 import { cn } from "@/lib/utils";
 
 interface ReviewRatingProps {
@@ -22,14 +22,12 @@ export function ReviewRating({ className }: ReviewRatingProps) {
             key={star}
             type="button"
             onClick={() => setRating(star)}
-            className="transition-opacity"
+            className="transition-opacity hover:opacity-80"
             aria-label={`Оценить ${star} из 5`}
           >
-            <Star
-              className={cn(
-                "size-6 fill-current",
-                star <= rating ? "text-warning" : "text-foreground/30"
-              )}
+            <StarSolidIcon
+              filled={star <= rating}
+              className={star <= rating ? "text-warning" : "text-[#9399BD]"}
             />
           </button>
         ))}

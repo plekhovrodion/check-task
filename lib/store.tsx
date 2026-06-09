@@ -9,12 +9,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { SAMPLE_REVIEW } from "./mock-data";
+import { INITIAL_ASSIGNMENTS, SAMPLE_REVIEW } from "./mock-data";
 import { getMaxScore } from "./criteria";
+import { calcScoredTotal } from "./review-utils";
+import { getUploadedPageImages } from "./work-images";
 import { loadStoreCache, saveStoreCache } from "./store-cache";
 import type {
   Assignment,
   AssignmentFormData,
+  ReviewResult,
   StudentWork,
   WorkStatus,
 } from "./types";
@@ -44,6 +47,11 @@ interface StoreContextValue {
   ) => void;
   startProcessing: (assignmentId: string, workId: string) => void;
   completeProcessing: (assignmentId: string, workId: string) => void;
+  updateReview: (
+    assignmentId: string,
+    workId: string,
+    review: ReviewResult
+  ) => void;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -62,6 +70,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (cached) {
       setAssignments(cached.assignments);
       setShowEmptyState(cached.showEmptyState);
+    } else {
+      setAssignments(INITIAL_ASSIGNMENTS);
     }
     setHydrated(true);
   }, []);
@@ -205,18 +215,51 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const completeProcessing = useCallback(
     (assignmentId: string, workId: string) => {
-      const assignment = assignments.find((a) => a.id === assignmentId);
-      const maxScore = assignment
-        ? getMaxScore(assignment.subject, assignment.workType)
-        : 22;
+      setAssignments((prev) =>
+        prev.map((assignment) => {
+          if (assignment.id !== assignmentId) return assignment;
+
+          const maxScore = getMaxScore(assignment.subject, assignment.workType);
+
+          return {
+            ...assignment,
+            works: assignment.works.map((work) => {
+              if (work.id !== workId) return work;
+
+              const pageImages = getUploadedPageImages(work);
+              const review = {
+                ...SAMPLE_REVIEW,
+                maxScore,
+                pageImages:
+                  pageImages.length > 0 ? pageImages : SAMPLE_REVIEW.pageImages,
+              };
+
+              return {
+                ...work,
+                status: "checked" as WorkStatus,
+                score: review.totalScore,
+                maxScore,
+                review,
+              };
+            }),
+          };
+        })
+      );
+    },
+    []
+  );
+
+  const updateReview = useCallback(
+    (assignmentId: string, workId: string, review: ReviewResult) => {
+      const totalScore = calcScoredTotal(review.criteria);
+      const nextReview = { ...review, totalScore };
+
       updateWork(assignmentId, workId, {
-        status: "checked",
-        score: 18,
-        maxScore,
-        review: SAMPLE_REVIEW,
+        review: nextReview,
+        score: totalScore,
       });
     },
-    [assignments, updateWork]
+    [updateWork]
   );
 
   const value = useMemo(
@@ -235,6 +278,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       submitWorksForCheck,
       startProcessing,
       completeProcessing,
+      updateReview,
     }),
     [
       assignments,
@@ -250,6 +294,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       submitWorksForCheck,
       startProcessing,
       completeProcessing,
+      updateReview,
     ]
   );
 
