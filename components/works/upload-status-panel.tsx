@@ -52,7 +52,7 @@ export function UploadStatusPanel({
             )}
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-base">
-                {student.name.trim() || "Имя ученика"}
+                {student.name.trim() || "Введите имя ученика"}
               </span>
               <span className="text-sm text-muted-foreground">
                 {student.uploaded

@@ -25,14 +25,19 @@ import { Input } from "@/components/ui/input";
 import { PdfPreviewThumb } from "@/components/works/pdf-preview-thumb";
 import { PdfViewerDialog } from "@/components/works/pdf-viewer-dialog";
 import { UploadImageDialog } from "@/components/works/upload-image-dialog";
-import { UploadReorderHint } from "@/components/works/upload-reorder-hint";
+import { UploadRejectedFiles } from "@/components/works/upload-rejected-files";
+import {
+  createUploadFileFromNative,
+  createUploadValidationError,
+  MAX_UPLOAD_FILE_SIZE_LABEL,
+  MAX_UPLOAD_FILES,
+  validateUploadFile,
+  type UploadFile,
+  type UploadValidationError,
+} from "@/lib/upload";
 import { cn } from "@/lib/utils";
 
-export interface UploadFile {
-  id: string;
-  url: string;
-  name: string;
-}
+export type { UploadFile } from "@/lib/upload";
 
 interface UploadStudentCardProps {
   studentName: string;
@@ -41,19 +46,8 @@ interface UploadStudentCardProps {
   onNameChange: (name: string) => void;
   onRemoveStudent?: () => void;
   canRemoveStudent?: boolean;
-  showReorderHint?: boolean;
-  onCloseReorderHint?: () => void;
   nameInvalid?: boolean;
 }
-
-const ACCEPTED_TYPES = [
-  "application/pdf",
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/bmp",
-  "image/heic",
-];
 
 interface SortableFileThumbProps {
   file: UploadFile;
@@ -89,7 +83,7 @@ function SortableFileThumb({
       style={style}
       className={cn(
         "group relative size-24 shrink-0 touch-none overflow-hidden rounded-lg border border-[#e4e6f7]",
-        isDragging && "z-10 opacity-50"
+        isDragging && "z-10 border-2 border-primary opacity-96"
       )}
       {...attributes}
       {...listeners}
@@ -118,7 +112,7 @@ function SortableFileThumb({
       )}
       <button
         type="button"
-        className="absolute top-[3px] right-[3px] flex items-center rounded-full bg-white p-1 shadow-sm"
+        className="absolute top-[3px] right-[3px] flex items-center rounded bg-white p-1"
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();
@@ -128,7 +122,7 @@ function SortableFileThumb({
       >
         <NavIcon name="cross" className="size-4" />
       </button>
-      <span className="pointer-events-none absolute bottom-[3px] left-[3px] min-w-5 rounded-full bg-[rgba(22,26,51,0.6)] px-1 text-sm font-medium text-white backdrop-blur-[2px]">
+      <span className="pointer-events-none absolute bottom-[3px] left-[3px] min-w-5 rounded-full bg-[rgba(22,26,51,0.6)] px-1 text-sm font-medium leading-5 text-white backdrop-blur-[2px]">
         {index + 1}
       </span>
     </div>
@@ -142,13 +136,14 @@ export function UploadStudentCard({
   onNameChange,
   onRemoveStudent,
   canRemoveStudent = true,
-  showReorderHint,
-  onCloseReorderHint,
   nameInvalid = false,
 }: UploadStudentCardProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [previewFile, setPreviewFile] = useState<UploadFile | null>(null);
+  const [rejectedFiles, setRejectedFiles] = useState<UploadValidationError[]>(
+    []
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -163,18 +158,30 @@ export function UploadStudentCard({
     (fileList: FileList | null) => {
       if (!fileList) return;
       const newFiles: UploadFile[] = [];
+      const newErrors: UploadValidationError[] = [];
+      let slotsLeft = MAX_UPLOAD_FILES - files.length;
+
       Array.from(fileList).forEach((file) => {
-        if (
-          ACCEPTED_TYPES.includes(file.type) ||
-          file.name.match(/\.(pdf|jpe?g|png|bmp|heic)$/i)
-        ) {
-          newFiles.push({
-            id: Math.random().toString(36).slice(2),
-            url: URL.createObjectURL(file),
-            name: file.name,
-          });
+        const errorCode = validateUploadFile(file);
+
+        if (errorCode) {
+          newErrors.push(createUploadValidationError(file, errorCode));
+          return;
         }
+
+        if (slotsLeft <= 0) {
+          newErrors.push(createUploadValidationError(file, "too_many_files"));
+          return;
+        }
+
+        newFiles.push(createUploadFileFromNative(file));
+        slotsLeft -= 1;
       });
+
+      if (newErrors.length > 0) {
+        setRejectedFiles((prev) => [...prev, ...newErrors]);
+      }
+
       if (newFiles.length > 0) {
         onFilesChange([...files, ...newFiles]);
       }
@@ -215,7 +222,7 @@ export function UploadStudentCard({
   const dropZone = (
     <div
       className={cn(
-        "flex min-h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-[#bfc3de] p-4 text-center transition-colors",
+        "flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-[#bfc3de] p-4 text-center transition-colors",
         isDragging && "border-primary bg-primary/5"
       )}
       onDragOver={(e) => {
@@ -231,21 +238,22 @@ export function UploadStudentCard({
         <span className="text-foreground"> или перетащите файлы</span>
       </p>
       <p className="text-sm text-muted-foreground">
-        Формат — pdf, jpg, jpeg, png, bmp, heic
+        Формат — pdf, jpg, jpeg, png, bmp, heic, меньше{" "}
+        {MAX_UPLOAD_FILE_SIZE_LABEL}. Не более {MAX_UPLOAD_FILES} файлов
       </p>
     </div>
   );
 
   return (
-    <div className="flex flex-col gap-3 border-b border-[#e4e6f7] bg-white p-6">
+    <div className="flex flex-col gap-5 border-b border-[#e4e6f7] bg-white p-6">
       <div className="flex items-center justify-between gap-4">
         <Input
           value={studentName}
           onChange={(e) => onNameChange(e.target.value)}
-          placeholder="Имя ученика"
+          placeholder="Введите имя ученика"
           aria-invalid={nameInvalid}
           className={cn(
-            "h-10 w-[240px] rounded-lg border-none bg-secondary px-3.5 text-sm shadow-none placeholder:text-foreground md:text-sm",
+            "h-auto w-[320px] rounded-[10px] border-none bg-secondary px-4 py-3 text-base shadow-none placeholder:text-[#9399bd] md:text-base",
             nameInvalid &&
               "border border-destructive bg-destructive/10 ring-3 ring-destructive/20"
           )}
@@ -263,62 +271,69 @@ export function UploadStudentCard({
         )}
       </div>
 
-      {files.length === 0 ? (
-        dropZone
-      ) : (
-        <div
-          className={cn(
-            "relative rounded-xl border border-dashed border-[#bfc3de] p-4 transition-colors",
-            isDragging && "border-primary bg-primary/5"
-          )}
-          onDragOver={(e) => {
-            if (e.dataTransfer.types.includes("Files")) {
-              e.preventDefault();
-              setIsDragging(true);
-            }
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => {
-            if (e.dataTransfer.files.length > 0) {
-              handleDrop(e);
-            }
-          }}
-        >
-          {showReorderHint && onCloseReorderHint && (
-            <UploadReorderHint open onClose={onCloseReorderHint} />
-          )}
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
+      <div className="flex flex-col gap-2">
+        <p className="text-base font-medium">
+          {files.length === 0 ? "Работа ученика" : "Проверьте порядок файлов"}
+        </p>
+
+        {files.length === 0 ? (
+          dropZone
+        ) : (
+          <div
+            className={cn(
+              "rounded-xl border border-dashed border-[#bfc3de] p-4 transition-colors",
+              isDragging && "border-primary bg-primary/5"
+            )}
+            onDragOver={(e) => {
+              if (e.dataTransfer.types.includes("Files")) {
+                e.preventDefault();
+                setIsDragging(true);
+              }
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(e) => {
+              if (e.dataTransfer.files.length > 0) {
+                handleDrop(e);
+              }
+            }}
           >
-            <SortableContext
-              items={files.map((f) => f.id)}
-              strategy={rectSortingStrategy}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
             >
-              <div className="flex flex-wrap items-center gap-2">
-                {files.map((file, index) => (
-                  <SortableFileThumb
-                    key={file.id}
-                    file={file}
-                    index={index}
-                    onRemove={() => removeFile(file.id)}
-                    onPreview={() => setPreviewFile(file)}
-                  />
-                ))}
-                <button
-                  type="button"
-                  className="flex size-24 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors hover:bg-primary/15"
-                  onClick={() => inputRef.current?.click()}
-                  aria-label="Добавить файлы"
-                >
-                  <Plus className="size-5" />
-                </button>
-              </div>
-            </SortableContext>
-          </DndContext>
-        </div>
-      )}
+              <SortableContext
+                items={files.map((f) => f.id)}
+                strategy={rectSortingStrategy}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  {files.map((file, index) => (
+                    <SortableFileThumb
+                      key={file.id}
+                      file={file}
+                      index={index}
+                      onRemove={() => removeFile(file.id)}
+                      onPreview={() => setPreviewFile(file)}
+                    />
+                  ))}
+                  {files.length < MAX_UPLOAD_FILES && (
+                    <button
+                      type="button"
+                      className="flex size-24 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors hover:bg-primary/15"
+                      onClick={() => inputRef.current?.click()}
+                      aria-label="Добавить файлы"
+                    >
+                      <Plus className="size-5" />
+                    </button>
+                  )}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
+        )}
+      </div>
+
+      <UploadRejectedFiles errors={rejectedFiles} />
 
       <input
         ref={inputRef}

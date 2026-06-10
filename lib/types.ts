@@ -1,6 +1,11 @@
 export type Subject = "russian" | "literature";
 export type WorkType = "ege" | "oge" | "final-essay" | "essay";
-export type WorkStatus = "pending" | "processing" | "checked" | "error";
+export type WorkStatus =
+  | "pending"
+  | "processing"
+  | "checked"
+  | "error"
+  | "cancelled";
 
 export interface Criterion {
   id: string;

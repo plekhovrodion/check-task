@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button-link";
 import { PageHeader } from "@/components/layout/page-header";
+import { CancelProcessingDialog } from "@/components/works/cancel-processing-dialog";
 import { ProcessingStepper } from "@/components/works/processing-stepper";
 import { WorkViewer } from "@/components/works/work-viewer";
 import { getWorkMediaItems } from "@/lib/work-images";
@@ -15,13 +16,15 @@ export function WorkProcessingContent() {
   const router = useRouter();
   const assignmentId = params.id as string;
   const workId = params.workId as string;
-  const { getAssignment, getWork, completeProcessing } = useStore();
+  const { getAssignment, getWork, completeProcessing, cancelProcessing } =
+    useStore();
 
   const assignment = getAssignment(assignmentId);
   const work = getWork(assignmentId, workId);
 
   const [progress, setProgress] = useState(12);
   const [currentStep, setCurrentStep] = useState(1);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   const works = assignment?.works ?? [];
   const currentIndex = works.findIndex((w) => w.id === workId);
@@ -34,6 +37,11 @@ export function WorkProcessingContent() {
 
     if (work.status === "checked") {
       router.replace(`/assignments/${assignmentId}/works/${workId}/review`);
+      return;
+    }
+
+    if (work.status === "cancelled") {
+      router.replace(`/assignments/${assignmentId}`);
       return;
     }
 
@@ -67,6 +75,11 @@ export function WorkProcessingContent() {
   }
 
   const mediaItems = getWorkMediaItems(work);
+
+  const handleCancelConfirm = () => {
+    cancelProcessing(assignmentId, workId);
+    router.push(`/assignments/${assignmentId}`);
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -110,10 +123,16 @@ export function WorkProcessingContent() {
           <ProcessingStepper
             progress={progress}
             currentStep={currentStep}
-            onCancel={() => router.push(`/assignments/${assignmentId}`)}
+            onCancel={() => setCancelDialogOpen(true)}
           />
         </div>
       </div>
+
+      <CancelProcessingDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        onConfirm={handleCancelConfirm}
+      />
     </div>
   );
 }

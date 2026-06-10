@@ -1,11 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { getCriteria } from "@/lib/criteria";
-import { calcScoredTotal } from "@/lib/review-utils";
+import {
+  MAX_CRITERION_COMMENT_LENGTH,
+  MAX_REVIEW_FEEDBACK_LENGTH,
+  calcScoredTotal,
+  clampReviewText,
+} from "@/lib/review-utils";
 import type { Assignment, CriterionResult, ReviewResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +58,7 @@ function EditButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 text-base font-medium text-primary transition-colors hover:text-primary/80"
+      className="shrink-0 text-base font-medium text-[#656c94] transition-colors hover:text-foreground"
     >
       Редактировать
     </button>
@@ -62,9 +67,74 @@ function EditButton({ onClick }: { onClick: () => void }) {
 
 function SaveButton({ onClick }: { onClick: () => void }) {
   return (
-    <Button type="button" onClick={onClick} className="h-9 px-4">
+    <Button
+      type="button"
+      onClick={onClick}
+      className="h-10 rounded-lg px-3.5 py-2.5 text-sm font-medium"
+    >
       Сохранить
     </Button>
+  );
+}
+
+function ScoreStepper({
+  score,
+  maxScore,
+  onChange,
+}: {
+  score: number;
+  maxScore: number;
+  onChange: (score: number) => void;
+}) {
+  const decrement = () => onChange(Math.max(0, score - 1));
+  const increment = () => {
+    const max = maxScore > 0 ? maxScore : Number.MAX_SAFE_INTEGER;
+    onChange(Math.min(max, score + 1));
+  };
+
+  return (
+    <div className="flex shrink-0 items-center gap-2 rounded-lg bg-secondary">
+      <button
+        type="button"
+        onClick={decrement}
+        disabled={score <= 0}
+        className="rounded-md p-2 transition-colors hover:bg-black/5 disabled:opacity-40"
+        aria-label="Уменьшить"
+      >
+        <Minus className="size-4" />
+      </button>
+      <span className="min-w-[2ch] text-center text-base font-medium">
+        {maxScore === 0 ? score : `${score}/${maxScore}`}
+      </span>
+      <button
+        type="button"
+        onClick={increment}
+        disabled={maxScore > 0 && score >= maxScore}
+        className="rounded-md p-2 transition-colors hover:bg-black/5 disabled:opacity-40"
+        aria-label="Увеличить"
+      >
+        <Plus className="size-4" />
+      </button>
+    </div>
+  );
+}
+
+function CharacterCounter({
+  value,
+  maxLength,
+}: {
+  value: string;
+  maxLength: number;
+}) {
+  return (
+    <p
+      className={cn(
+        "text-sm text-muted-foreground",
+        value.length >= maxLength && "text-destructive"
+      )}
+    >
+      {value.length}/{maxLength}
+    </p>
   );
 }
 
@@ -115,8 +185,10 @@ export function ReviewPanel({
   return (
     <div className={cn("flex flex-col gap-6", className)}>
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-xl font-medium tracking-tight">Обратная связь</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-xl font-medium leading-[26px] tracking-[-0.2px]">
+            Обратная связь
+          </h2>
           {onReviewChange && !editingFeedback && (
             <EditButton onClick={() => setEditingFeedback(true)} />
           )}
@@ -125,14 +197,28 @@ export function ReviewPanel({
           )}
         </div>
         {editingFeedback ? (
-          <textarea
-            value={review.feedback}
-            onChange={(event) =>
-              updateReview({ feedback: event.target.value })
-            }
-            rows={5}
-            className="w-full resize-y rounded-2xl border border-[#e4e6f7] bg-transparent px-4 py-3 text-base leading-6 outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          />
+          <div className="flex flex-col gap-1">
+            <div className="rounded-[10px] bg-secondary p-3">
+              <textarea
+                value={review.feedback}
+                onChange={(event) =>
+                  updateReview({
+                    feedback: clampReviewText(
+                      event.target.value,
+                      MAX_REVIEW_FEEDBACK_LENGTH
+                    ),
+                  })
+                }
+                maxLength={MAX_REVIEW_FEEDBACK_LENGTH}
+                rows={5}
+                className="w-full resize-y border-none bg-transparent text-base leading-6 outline-none"
+              />
+            </div>
+            <CharacterCounter
+              value={review.feedback}
+              maxLength={MAX_REVIEW_FEEDBACK_LENGTH}
+            />
+          </div>
         ) : (
           <p className="text-base leading-6">{review.feedback}</p>
         )}
@@ -141,8 +227,8 @@ export function ReviewPanel({
       <div className="h-px bg-[#e4e6f7]" />
 
       <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-xl font-medium tracking-tight">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-xl font-medium leading-[26px] tracking-[-0.2px]">
             Критерии оценивания
           </h2>
           {onReviewChange && !editingCriteria && (
@@ -159,7 +245,7 @@ export function ReviewPanel({
           </p>
           <Progress
             value={(review.totalScore / review.maxScore) * 100}
-            className="gap-0 [&_[data-slot=progress-indicator]]:bg-success [&_[data-slot=progress-track]]:h-1.5 [&_[data-slot=progress-track]]:bg-secondary"
+            className="gap-0 [&_[data-slot=progress-indicator]]:bg-success [&_[data-slot=progress-track]]:h-[6px] [&_[data-slot=progress-track]]:bg-secondary"
           />
         </div>
 
@@ -171,7 +257,7 @@ export function ReviewPanel({
               <div
                 key={result.criterionId}
                 className={cn(
-                  "flex items-start gap-2 rounded-2xl border p-4 transition-colors",
+                  "flex flex-col gap-3 rounded-2xl border p-4 transition-colors",
                   hoveredCriterionId === result.criterionId
                     ? "border-primary bg-[#f0f2ff]"
                     : "border-[#e4e6f7]"
@@ -179,66 +265,64 @@ export function ReviewPanel({
                 onMouseEnter={() => onCriterionHover?.(result.criterionId)}
                 onMouseLeave={() => onCriterionHover?.(null)}
               >
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <p className="text-lg font-medium tracking-tight">
+                <div className="flex items-start gap-3">
+                  <p className="min-w-0 flex-1 text-lg font-medium leading-6 tracking-[-0.1px]">
                     {criterion
                       ? `${criterion.code}. ${criterion.title}`
                       : result.criterionId}
                   </p>
                   {editingCriteria ? (
-                    <textarea
-                      value={result.description}
-                      onChange={(event) =>
-                        updateCriterion(result.criterionId, {
-                          description: event.target.value,
-                        })
+                    <ScoreStepper
+                      score={result.score}
+                      maxScore={result.maxScore}
+                      onChange={(score) =>
+                        updateCriterion(result.criterionId, { score })
                       }
-                      rows={3}
-                      className="w-full resize-y rounded-xl border border-[#e4e6f7] bg-transparent px-3 py-2 text-base leading-6 outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                     />
                   ) : (
-                    <p className="text-base leading-6">{result.description}</p>
-                  )}
-                  {result.errors && result.errors.length > 0 && (
-                    <ul className="list-disc pl-6 text-base leading-6">
-                      {result.errors.map((err) => (
-                        <li key={err}>{err}</li>
-                      ))}
-                    </ul>
+                    <ScoreBadge
+                      score={result.score}
+                      maxScore={result.maxScore}
+                    />
                   )}
                 </div>
-                {editingCriteria && result.maxScore > 0 ? (
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={result.maxScore}
-                      value={result.score}
-                      onChange={(event) =>
-                        updateCriterion(result.criterionId, {
-                          score: Number(event.target.value),
-                        })
-                      }
-                      className="h-9 w-14 px-2 text-center"
+                {editingCriteria ? (
+                  <div className="flex flex-col gap-1">
+                    <div className="rounded-[10px] bg-secondary p-3">
+                      <textarea
+                        value={result.description}
+                        onChange={(event) =>
+                          updateCriterion(result.criterionId, {
+                            description: clampReviewText(
+                              event.target.value,
+                              MAX_CRITERION_COMMENT_LENGTH
+                            ),
+                          })
+                        }
+                        maxLength={MAX_CRITERION_COMMENT_LENGTH}
+                        rows={3}
+                        className="w-full resize-y border-none bg-transparent text-base leading-6 outline-none"
+                      />
+                    </div>
+                    <CharacterCounter
+                      value={result.description}
+                      maxLength={MAX_CRITERION_COMMENT_LENGTH}
                     />
-                    <span className="text-base text-muted-foreground">
-                      /{result.maxScore}
-                    </span>
                   </div>
                 ) : (
-                  <ScoreBadge score={result.score} maxScore={result.maxScore} />
+                  <p className="text-base leading-6">{result.description}</p>
+                )}
+                {result.errors && result.errors.length > 0 && (
+                  <ul className="list-disc pl-6 text-base leading-6">
+                    {result.errors.map((err) => (
+                      <li key={err}>{err}</li>
+                    ))}
+                  </ul>
                 )}
               </div>
             );
           })}
         </div>
-
-        <button
-          type="button"
-          className="self-start text-base font-medium text-muted-foreground"
-        >
-          Показать критерии
-        </button>
       </div>
     </div>
   );

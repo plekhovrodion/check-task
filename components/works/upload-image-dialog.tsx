@@ -136,6 +136,15 @@ function UploadImageCropContent({
           <ReactCropKit
             crop={crop}
             keepSelection
+            ruleOfThirds
+            renderSelectionAddon={() => (
+              <>
+                <span className="crop-frame-corner crop-frame-corner--nw" aria-hidden />
+                <span className="crop-frame-corner crop-frame-corner--ne" aria-hidden />
+                <span className="crop-frame-corner crop-frame-corner--sw" aria-hidden />
+                <span className="crop-frame-corner crop-frame-corner--se" aria-hidden />
+              </>
+            )}
             onChange={(pixelCrop, percentCrop) => {
               setCrop(percentCrop);
               pixelCropRef.current = pixelCrop;

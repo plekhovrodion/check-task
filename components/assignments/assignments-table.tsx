@@ -119,7 +119,7 @@ export function AssignmentsTable({ assignments }: AssignmentsTableProps) {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <ButtonLink
-                        href={`/assignments/${assignment.id}`}
+                        href={`/assignments/${assignment.id}/edit`}
                         variant="ghost"
                         size="icon"
                         className="size-9 rounded-lg text-muted-foreground"

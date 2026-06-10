@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FileText } from "lucide-react";
+import { buildPdfEmbedUrl } from "@/lib/pdf-url";
 import { cn } from "@/lib/utils";
 
 interface PdfPreviewThumbProps {
@@ -34,7 +35,7 @@ export function PdfPreviewThumb({
   return (
     <div className={cn("relative size-full overflow-hidden bg-white", className)}>
       <iframe
-        src={`${url}#page=1&toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+        src={buildPdfEmbedUrl(url, { page: 1, hideScrollbar: true })}
         title="Превью PDF"
         className="pointer-events-none absolute top-0 left-0 h-[400%] w-[400%] max-w-none origin-top-left scale-[0.25] border-0"
         onError={() => setFailed(true)}

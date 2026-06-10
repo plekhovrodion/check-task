@@ -2,14 +2,15 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
 } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { PageHeader } from "@/components/layout/page-header";
 import {
   UploadStudentCard,
@@ -24,6 +25,20 @@ interface StudentUpload {
   name: string;
   files: UploadFile[];
   canRemove: boolean;
+}
+
+const ADD_STUDENT_SHORTCUT_KEY = "Enter";
+
+function AddStudentShortcutHint() {
+  const isMac =
+    typeof navigator !== "undefined" && /Mac/i.test(navigator.platform);
+
+  return (
+    <KbdGroup className="ml-1">
+      {isMac ? <Kbd>⌘</Kbd> : <Kbd>Ctrl</Kbd>}
+      <Kbd>↵</Kbd>
+    </KbdGroup>
+  );
 }
 
 const DEFAULT_STUDENT: StudentUpload = {
@@ -43,12 +58,6 @@ export function UploadContent() {
   const [students, setStudents] = useState<StudentUpload[]>([DEFAULT_STUDENT]);
   const [activeStudentId, setActiveStudentId] = useState<string | null>(
     DEFAULT_STUDENT.id
-  );
-  const [showReorderHint, setShowReorderHint] = useState(false);
-  const hintChecked = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
   );
   const [invalidNameIds, setInvalidNameIds] = useState<Set<string>>(
     () => new Set()
@@ -87,14 +96,6 @@ export function UploadContent() {
         const next = prev.map((s) =>
           s.id === studentId ? { ...s, files } : s
         );
-        const student = next.find((s) => s.id === studentId);
-        if (
-          student &&
-          files.length > 0 &&
-          prev.find((s) => s.id === studentId)?.files.length === 0
-        ) {
-          setShowReorderHint(true);
-        }
         return next;
       });
     },
@@ -115,7 +116,7 @@ export function UploadContent() {
     }
   }, []);
 
-  const handleAddStudent = () => {
+  const handleAddStudent = useCallback(() => {
     const newId = `upload-${Date.now()}`;
 
     setStudents((prev) => [
@@ -132,7 +133,21 @@ export function UploadContent() {
     requestAnimationFrame(() => {
       scrollToStudent(newId);
     });
-  };
+  }, [scrollToStudent]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (listsDialogOpen) return;
+      if (event.key !== ADD_STUDENT_SHORTCUT_KEY) return;
+      if (!(event.metaKey || event.ctrlKey)) return;
+
+      event.preventDefault();
+      handleAddStudent();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleAddStudent, listsDialogOpen]);
 
   const handleRemoveStudent = (studentId: string) => {
     setStudents((prev) => {
@@ -232,8 +247,6 @@ export function UploadContent() {
     );
   }
 
-  const shouldShowHint = hintChecked && showReorderHint;
-
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <PageHeader
@@ -273,8 +286,6 @@ export function UploadContent() {
                       ? () => handleRemoveStudent(student.id)
                       : undefined
                   }
-                  showReorderHint={index === 0 && shouldShowHint}
-                  onCloseReorderHint={() => setShowReorderHint(false)}
                 />
               </div>
             ))}
@@ -288,6 +299,7 @@ export function UploadContent() {
             >
               <Plus />
               Добавить ученика
+              <AddStudentShortcutHint />
             </Button>
             <Button
               variant="secondary"

@@ -54,11 +54,14 @@ interface StoreContextValue {
   ) => void;
   startProcessing: (assignmentId: string, workId: string) => void;
   completeProcessing: (assignmentId: string, workId: string) => void;
+  cancelProcessing: (assignmentId: string, workId: string) => void;
   updateReview: (
     assignmentId: string,
     workId: string,
     review: ReviewResult
   ) => void;
+  recheckAllWorks: (assignmentId: string) => void;
+  clearAllWorks: (assignmentId: string) => void;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -236,6 +239,13 @@ function StoreProviderClient({ children }: { children: ReactNode }) {
     [updateWork]
   );
 
+  const cancelProcessing = useCallback(
+    (assignmentId: string, workId: string) => {
+      updateWork(assignmentId, workId, { status: "cancelled" as WorkStatus });
+    },
+    [updateWork]
+  );
+
   const completeProcessing = useCallback(
     (assignmentId: string, workId: string) => {
       setAssignments((prev) =>
@@ -300,6 +310,35 @@ function StoreProviderClient({ children }: { children: ReactNode }) {
     [updateWork]
   );
 
+  const recheckAllWorks = useCallback(
+    (assignmentId: string) => {
+      setAssignments((prev) =>
+        prev.map((a) =>
+          a.id === assignmentId
+            ? {
+                ...a,
+                works: a.works.map((w) =>
+                  w.status === "checked"
+                    ? { ...w, status: "processing" as WorkStatus }
+                    : w
+                ),
+              }
+            : a
+        )
+      );
+    },
+    [setAssignments]
+  );
+
+  const clearAllWorks = useCallback(
+    (assignmentId: string) => {
+      setAssignments((prev) =>
+        prev.map((a) => (a.id === assignmentId ? { ...a, works: [] } : a))
+      );
+    },
+    [setAssignments]
+  );
+
   const value = useMemo(
     () => ({
       assignments,
@@ -316,7 +355,10 @@ function StoreProviderClient({ children }: { children: ReactNode }) {
       submitWorksForCheck,
       startProcessing,
       completeProcessing,
+      cancelProcessing,
       updateReview,
+      recheckAllWorks,
+      clearAllWorks,
     }),
     [
       assignments,
@@ -333,7 +375,10 @@ function StoreProviderClient({ children }: { children: ReactNode }) {
       submitWorksForCheck,
       startProcessing,
       completeProcessing,
+      cancelProcessing,
       updateReview,
+      recheckAllWorks,
+      clearAllWorks,
     ]
   );
 
@@ -375,7 +420,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           submitWorksForCheck: () => {},
           startProcessing: () => {},
           completeProcessing: () => {},
+          cancelProcessing: () => {},
           updateReview: () => {},
+          recheckAllWorks: () => {},
+          clearAllWorks: () => {},
         }}
       >
         {children}

@@ -36,9 +36,14 @@ export function AssignmentDetailContent() {
         title={assignment.title}
         subtitle={`${SUBJECT_LABELS[assignment.subject]} · ${WORK_TYPE_LABELS[assignment.workType]} · ${summary}`}
         actions={
-          <ButtonLink href={`/assignments/${id}/upload`}>
-            Загрузить работы
-          </ButtonLink>
+          <>
+            <ButtonLink href={`/assignments/${id}/edit`} variant="secondary">
+              Редактировать
+            </ButtonLink>
+            <ButtonLink href={`/assignments/${id}/upload`}>
+              Загрузить работы
+            </ButtonLink>
+          </>
         }
       />
 

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, CircleX, Loader2 } from "lucide-react";
 import { assetPath } from "@/lib/asset-path";
 import type { WorkStatus } from "@/lib/types";
 
@@ -31,6 +31,10 @@ const STATUS_CONFIG: Record<
   pending: {
     label: "Ожидает",
     icon: null,
+  },
+  cancelled: {
+    label: "Отменён",
+    icon: <CircleX className="size-5 shrink-0 text-muted-foreground" />,
   },
 };
 

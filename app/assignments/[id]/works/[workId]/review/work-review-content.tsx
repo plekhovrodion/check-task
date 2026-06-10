@@ -190,12 +190,14 @@ export function WorkReviewContent() {
 
       <div className="flex flex-col rounded-[20px] bg-white lg:flex-row">
         <div className="flex min-w-0 flex-col gap-6 p-6 lg:flex-1">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-xl font-medium tracking-tight">Работа ученика</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-xl font-medium leading-[26px] tracking-[-0.2px]">
+              Работа ученика
+            </h2>
             <button
               type="button"
               onClick={() => setIsEditingText(true)}
-              className="shrink-0 text-base font-medium text-primary transition-colors hover:text-primary/80"
+              className="shrink-0 text-base font-medium text-[#656c94] transition-colors hover:text-foreground"
             >
               Редактировать
             </button>

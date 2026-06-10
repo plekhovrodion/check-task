@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { NavIcon } from "@/components/layout/nav-icon";
 import { PdfViewer } from "@/components/works/pdf-viewer";
 import { WorkMediaThumb } from "@/components/works/work-media-thumb";
@@ -63,6 +64,9 @@ function WorkImageFullscreenContent({
   }, [items.length, handleClose]);
 
   const currentItem = items[currentIndex];
+  const goPrev = () => setCurrentIndex((index) => Math.max(0, index - 1));
+  const goNext = () =>
+    setCurrentIndex((index) => Math.min(items.length - 1, index + 1));
 
   return (
     <div
@@ -83,6 +87,20 @@ function WorkImageFullscreenContent({
       >
         <NavIcon name="cross" className="brightness-0 invert" />
       </button>
+
+      {items.length > 1 && currentIndex > 0 && (
+        <button
+          type="button"
+          className="absolute top-1/2 left-4 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-[10px] bg-[rgba(16,24,40,0.5)] text-white backdrop-blur-[16px] transition-colors hover:bg-[rgba(16,24,40,0.65)]"
+          onClick={(event) => {
+            event.stopPropagation();
+            goPrev();
+          }}
+          aria-label="Предыдущий файл"
+        >
+          <ChevronLeft className="size-6" />
+        </button>
+      )}
 
       <div
         className={cn(
@@ -107,6 +125,20 @@ function WorkImageFullscreenContent({
           />
         )}
       </div>
+
+      {items.length > 1 && currentIndex < items.length - 1 && (
+        <button
+          type="button"
+          className="absolute top-1/2 right-4 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-[10px] bg-[rgba(16,24,40,0.5)] text-white backdrop-blur-[16px] transition-colors hover:bg-[rgba(16,24,40,0.65)]"
+          onClick={(event) => {
+            event.stopPropagation();
+            goNext();
+          }}
+          aria-label="Следующий файл"
+        >
+          <ChevronRight className="size-6" />
+        </button>
+      )}
 
       {items.length > 1 && (
         <div
